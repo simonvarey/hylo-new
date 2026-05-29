@@ -1,5 +1,5 @@
 /// A collection containing a single element.
-public type CollectionOfOne<Element: Movable & Deinitializable>: Movable, Deinitializable {
+public struct CollectionOfOne<Element/* where Element is Movable & Deinitializable*/> /*is Movable & Deinitializable*/ {
 
   /// The element contained in `self`.
   var contents: Element

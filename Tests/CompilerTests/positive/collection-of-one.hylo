@@ -1,0 +1,15 @@
+//! stage:run stdlib:full
+
+/// Prints `b` as `0` or `1`.
+fun print_bool(b: Bool) {
+  if b {
+    print(1)
+  } else {
+    print(0)
+  }
+}
+
+public fun main() {
+  let c = CollectionOfOne(42)
+  print_bool(c[false] == 42)
+}
