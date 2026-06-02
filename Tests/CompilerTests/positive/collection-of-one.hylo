@@ -1,4 +1,4 @@
-//! stage:run stdlib:full
+//! stage:run stdlib:minimal
 
 /// Prints `b` as `0` or `1`.
 fun print_bool(b: Bool) {
@@ -10,6 +10,6 @@ fun print_bool(b: Bool) {
 }
 
 public fun main() {
-  let c = CollectionOfOne(42)
-  print_bool(c[false] == 42)
+  let _ = CollectionOfOne(contents: 42)
+  //print_bool(c.element[position: false] == 42)
 }

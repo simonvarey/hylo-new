@@ -1,0 +1,35 @@
+/// A collection containing a single element.
+public struct CollectionOfOne<Element> {
+
+  /// The element contained in `self`.
+  var contents: Element
+
+  /// Creates a collection containing just `contents`.
+  public init(_ contents: sink Element) {
+    &self.contents = contents
+  }
+
+  //fun deinit() sink { }
+
+}
+
+given <Element is Deinitializable> CollectionOfOne<Element> is Deinitializable {
+  fun deinit() sink {
+    self.contents.deinit()
+  }
+}
+
+// Will be `given CollectionOfOne<Element> is Collection<Element>`
+/*extension <Element> CollectionOfOne<Element> {
+
+  //public typealias Position = Bool
+
+  public fun start_position() -> Bool { false }
+
+  public fun end_position() -> Bool { true }
+
+  public fun position(after i: Bool) -> Bool { true }
+
+  public subscript element(_ position: Bool) -> Element { self.contents }
+
+}*/
