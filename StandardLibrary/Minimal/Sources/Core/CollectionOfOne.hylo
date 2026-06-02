@@ -30,6 +30,7 @@ given <Element is Deinitializable> CollectionOfOne<Element> is Deinitializable {
 
   public fun position(after i: Bool) -> Bool { true }
 
-  public subscript element(_ position: Bool) -> Element { self.contents }
+  //https://github.com/hylo-lang/hylo-new/issues/147
+  public subscript at(_ position: Bool) -> Element { self.contents }
 
 }*/
