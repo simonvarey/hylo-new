@@ -1,11 +1,19 @@
-//! stage:lowering
+//! stage:typing
 
-fun abs(x: Int) -> Int {
-  let _ = 3 // dummy statement
-
-  if x < 0 {
-    return 0 - x
+fun f() -> Int {
+  if true {
+     return 1
   } else {
-    return 0 + x
+     return 0
+  }
+}
+
+fun g() -> Int {
+  if true {
+    let a = 20
+    return a + 0
+  } else {
+    let b = 40
+    return b + 1
   }
 }

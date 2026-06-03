@@ -57,7 +57,7 @@ public struct IRFunction: Sendable {
     fileprivate private(set) var tag: InstructionTag
 
     /// The basic block containing `instruction`.
-    fileprivate let parent: IRBlock.ID
+    fileprivate var parent: IRBlock.ID
 
     /// Create an instance wrapping `instruction`, which is in `parent`.
     fileprivate init<T: Instruction>(instruction: T, parent: IRBlock.ID) {
@@ -387,7 +387,7 @@ public struct IRFunction: Sendable {
       return (t.erased, false)
     case .floatingPoint(_, let t):
       return (t.erased, false)
-    case .function(_, let t):
+    case .function(_, _, let t):
       return (t, true)
     case .bundle(_, let t, _):
       return (t, true)
@@ -443,6 +443,31 @@ public struct IRFunction: Sendable {
   /// Appends a basic block to this function and returns its identity.
   public mutating func addBlock() -> IRBlock.ID {
     blocks.append(.init())
+  }
+
+  /// Adds a new basic block, moves the instructions before `i` in that block, preserving relative
+  /// order, and returns the new block's identity.
+  ///
+  /// After calling this method, `i` is the first instruction of the new block and all instructions
+  /// preceding `i` are left in their current block, in the same order.
+  public mutating func split(before i: AnyInstructionIdentity) -> IRBlock.ID {
+    let a = block(defining: i)
+    let b = addBlock()
+
+    // Set `i` as the first instruction of the new block.
+    blocks[b].setFirst(i)
+    blocks[b].setLast(blocks[a].last!)
+
+    // Set the instruction before `i` as the last instruction of the block that got split.
+    if let j = instruction(before: i) {
+      blocks[a].setLast(j)
+    } else {
+      blocks[a].clear()
+    }
+
+    // Update the parent block of all instructions after `b`
+    for i in instructions(in: b) { slots[i.address].parent = b }
+    return b
   }
 
   /// Returns the instruction that follows `i`.
@@ -522,11 +547,15 @@ public struct IRFunction: Sendable {
     _ instruction: T, to b: IRBlock.ID
   ) -> AnyInstructionIdentity {
     assert(!isTerminated(b), "insertion after terminator")
-    return insert(instruction) { (me, i) in
-      let a = me.slots.append(.init(instruction: i, parent: b))
-      let s = AnyInstructionIdentity(address: a)
-      me.blocks[b].setLast(s)
-      return s
+    if let i = blocks[b].last {
+      return insert(instruction, after: i)
+    } else {
+      return insert(instruction) { (me, i) in
+        let a = me.slots.append(.init(instruction: i, parent: b))
+        let s = AnyInstructionIdentity(address: a)
+        me.blocks[b].setLast(s)
+        return s
+      }
     }
   }
 
@@ -535,11 +564,15 @@ public struct IRFunction: Sendable {
   public mutating func prepend<T: Instruction>(
     _ instruction: T, to b: IRBlock.ID
   ) -> AnyInstructionIdentity {
-    insert(instruction) { (me, i) in
-      let a = me.slots.prepend(.init(instruction: i, parent: b))
-      let s = AnyInstructionIdentity(address: a)
-      me.blocks[b].setFirst(s)
-      return s
+    if let i = blocks[b].first {
+      return insert(instruction, before: i)
+    } else {
+      return insert(instruction) { (me, i) in
+        let a = me.slots.prepend(.init(instruction: i, parent: b))
+        let s = AnyInstructionIdentity(address: a)
+        me.blocks[b].setFirst(s)
+        return s
+      }
     }
   }
 
@@ -669,6 +702,7 @@ public struct IRFunction: Sendable {
       bindings.remove(value: .register(i))
       let n = (i != blocks[b].last) ? slots.address(after: i.address) : nil
       a = n.map(AnyInstructionIdentity.init(address:))
+      slots.remove(at: i.address)
     }
     blocks.remove(at: b)
   }
