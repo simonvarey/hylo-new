@@ -1,0 +1,5 @@
+//! stage:run stdlib:minimal
+
+public fun main() {
+  let _ = CollectionOfOne(contents: 42)
+}
