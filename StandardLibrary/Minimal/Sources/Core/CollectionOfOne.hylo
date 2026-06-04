@@ -1,5 +1,5 @@
 /// A collection containing a single element.
-public struct CollectionOfOne<Element> {
+public struct CollectionOfOne<Element> is Deinitializable {
 
   /// The element contained in `self`.
   var contents: Element
@@ -8,5 +8,7 @@ public struct CollectionOfOne<Element> {
   public init(_ contents: sink Element) {
     &self.contents = contents
   }
+
+  fun deinit() sink { }
 
 }
