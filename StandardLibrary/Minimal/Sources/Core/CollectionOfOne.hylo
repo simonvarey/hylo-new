@@ -1,0 +1,12 @@
+/// A collection containing a single element.
+public struct CollectionOfOne<Element> {
+
+  /// The element contained in `self`.
+  var contents: Element
+
+  /// Creates a collection containing just `contents`.
+  public init(_ contents: sink Element) {
+    &self.contents = contents
+  }
+
+}
