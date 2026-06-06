@@ -1,0 +1,10 @@
+/// A collection containing a single element.
+public struct CollectionOfOne<Element> is Deinitializable {
+
+  /// The element contained in `self`.
+  var contents: Element
+
+  /// Creates a collection containing just `contents`.
+  memberwise init
+
+}
