@@ -387,7 +387,7 @@ public struct IRFunction: Sendable {
       return (t.erased, false)
     case .floatingPoint(_, let t):
       return (t.erased, false)
-    case .function(_, let t):
+    case .function(_, _, let t):
       return (t, true)
     case .bundle(_, let t, _):
       return (t, true)
@@ -669,6 +669,7 @@ public struct IRFunction: Sendable {
       bindings.remove(value: .register(i))
       let n = (i != blocks[b].last) ? slots.address(after: i.address) : nil
       a = n.map(AnyInstructionIdentity.init(address:))
+      slots.remove(at: i.address)
     }
     blocks.remove(at: b)
   }
