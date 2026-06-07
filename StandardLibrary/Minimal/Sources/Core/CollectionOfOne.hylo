@@ -1,5 +1,5 @@
 /// A collection containing a single element.
-public struct CollectionOfOne<Element> is Deinitializable {
+public struct CollectionOfOne<Element> {
 
   /// The element contained in `self`.
   var contents: Element
