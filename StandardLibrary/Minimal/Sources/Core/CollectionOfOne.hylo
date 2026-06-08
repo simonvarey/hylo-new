@@ -8,3 +8,5 @@ public struct CollectionOfOne<Element> {
   memberwise init
 
 }
+
+given <Element is Deinitializable> CollectionOfOne<Element> is Deinitializable { }
