@@ -746,7 +746,13 @@ internal struct IREmitter {
       lower(memberwiseInitialization: e, of: target)
     }
 
-    // Are we lowering an ordinary call?
+    // Are we lowering a subscript application?
+    else if program[e].style == .bracketed {
+      let y = lower(call: e, output: .poison(.place(.error)))
+      lowering(e, { $0._emitMove([.inout, .set], y, to: target) })
+    }
+
+    // Otherwise lower a function call.
     else {
       lower(call: e, output: target)
     }
@@ -1261,6 +1267,9 @@ internal struct IREmitter {
   /// The callee of `e` is the expression of a function or subscript other than a built-in function
   /// or scalar conversion. If `e` is an ordinary function call, `target` is the place in which the
   /// result of the call is written. Otherwise, it is a poison value.
+  ///
+  /// - Returns: a place holding the result of the call: for a function call, the place into which
+  ///   the callee writes its result; for a subscript call, the resulting projection.
   @discardableResult
   private mutating func lower(call e: Call.ID, output target: IRValue) -> IRValue {
     // Compute the value of the callee, which may be a function or subscript.
@@ -1289,7 +1298,7 @@ internal struct IREmitter {
 
     return lowering(e) { (me) in
       // Form accesses on the parameters right before the call. Note that we won't close these
-      // accesses here because, if the callee is a subscript, then the lifetimes the parameters'
+      // accesses here because, if the callee is a subscript, then the lifetimes of the parameters'
       // accesses have to cover all uses of the projected value, which are not known yet. We'll
       // delay the work until lifetime analysis instead.
       if me.program[e].style == .parenthesized {
@@ -1390,13 +1399,7 @@ internal struct IREmitter {
     case .member(let d):
       // Emit the receiver.
       let q = lowered(lvalue: program[e].qualification!)
-
-      // Is `d` a stored property of a type whose layout is visible?
-      if let i = storedPropertyIndex(of: d, in: program.parent(containing: e)) {
-        return lowering(e, { $0._subfield(q, at: [i], declaredBy: d) })
-      } else {
-        return lowering(e, { $0._property(d, of: q, withType: t) })
-      }
+      return lowering(e, { $0._property(d, of: q, withType: t) })
 
     case .builtin(.selfAlias):
       return lowering(e, { $0._emitTypeWitness(of: t) })
@@ -1945,29 +1948,6 @@ internal struct IREmitter {
     }
   }
 
-  /// If `d` declares a stored property of a type whose layout is visible in `scopeOfUse`, returns
-  /// that property's index; otherwise, returns `nil`.
-  ///
-  /// The index of a stored property is used in instances of `IndexPath` to represent the location
-  /// of a part relative to the location of a whole. For example, if `S` is a struct with two
-  /// stored properties `x` and `y`, declared in that order, the index of `y` is 1.
-  ///
-  /// If resilience is enabled in the module containing `d`, the layout of the type declared by `d`
-  /// is visible if `d` is the same module as `scopeOfUse` or if `d` is annotated with `@frozen`.
-  /// Layouts are always visible when resilience is disabled.
-  private mutating func storedPropertyIndex(
-    of d: DeclarationIdentity, in scopeOfUse: ScopeIdentity
-  ) -> Int? {
-    guard
-      let v = program.cast(d, to: VariableDeclaration.self),
-      let p = program.parent(containing: v, as: StructDeclaration.self),
-      program.isLayoutVisible(p, in: scopeOfUse)
-    else { return nil }
-
-    let properties = program.storedProperties(of: p)
-    return properties.firstIndex(of: v)
-  }
-
   /// Reports the diagnostic `d`.
   private mutating func report(_ d: Diagnostic) {
     program[module].addDiagnostic(d)
@@ -2236,9 +2216,7 @@ internal struct IREmitter {
   }
 
   /// Inserts a `subfield` instruction.
-  internal mutating func _subfield(
-    _ base: IRValue, at path: IndexPath, declaredBy declaration: DeclarationIdentity? = nil
-  ) -> IRValue {
+  internal mutating func _subfield(_ base: IRValue, at path: IndexPath) -> IRValue {
     // The instruction is equivalent to the identity if the path is empty.
     if path.isEmpty { return base }
 
@@ -2248,7 +2226,7 @@ internal struct IREmitter {
     }
 
     let s = IRSubfield(
-      base: base, path: path, subfieldType: subfieldType!, declaration: declaration,
+      base: base, path: path, subfieldType: subfieldType!,
       anchor: currentAnchor)
     return insert(s)!
   }
