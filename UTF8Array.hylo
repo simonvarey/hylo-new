@@ -1,5 +1,5 @@
 /// A collection of UTF-8 code units.
-public struct UTF8Array {
+public struct UTF8Array is Deinitializable {
 
   /// Important: This implementation assumes little-endianness.
 
@@ -56,5 +56,6 @@ public struct UTF8Array {
 }
 
 fun main() {
-
+  let arr = UTF8Array()
+  precondition(arr.units == 0 as UInt64)
 }
