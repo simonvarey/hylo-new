@@ -5,8 +5,14 @@ public struct UTF8Array is Deinitializable {
 
   /// The description of out-of-line payloads in `UTF8Array`s.
   struct Header { 
+
+    /// The number of units in the out-of-line payload.
     public let count: Int
+
+    /// The space allocated for units in the out-of-line payload.
     public let capacity: Int 
+
+    /// Creates a header with the provided count and capacity.
     memberwise init
   }
 
@@ -26,13 +32,15 @@ public struct UTF8Array is Deinitializable {
   /// b01 indicates whether the payload of the array is stored out-of-line. If it is, `units` with
   /// b01 and b00 unset stores a pointer to the out-of-line payload, which is a buffer storing a
   /// header followed by a contiguous array of bytes containing the units themselves, followed by
-  /// a null terminator. The buffer is aligned at minimum 4 bytes (justifying why b01 and b0 are
-  /// available). The header is a pair of `Int`s whose first and second elements are the number of
-  /// units in the array and its capacity, respectively.
+  /// null units up to the buffer's capacity. The buffer is aligned at minimum 4 bytes (justifying 
+  /// why b01 and b00 are available to be used as a representation discriminator). The header is a 
+  /// pair of `Int`s whose first and second elements are the number of units in the array and its 
+  /// capacity, respectively.
   ///
   /// If the payload is inline, the number of units in the view is stored in the 6 highest bits of
-  /// `units`'s least significant byte and the units themselves are stored in the bytes 1 to 7, in
-  /// reverse order. For example, the inline UTF-8 view of "Salut" is as follows:
+  /// `units`'s least significant byte and the units themselves are stored in the bytes 1 to 6, in
+  /// reverse order, followed by a zero byte. For example, the inline UTF-8 view of "Salut" is as 
+  /// follows:
   ///
   ///                 least significant byte
   ///                                      ↓
@@ -40,6 +48,8 @@ public struct UTF8Array is Deinitializable {
   /// | 00 | 00 | 74 | 75 | 6C | 61 | 53 | 05 |
   /// └────┴────┴────┴────┴────┴────┴────┴────┘
   ///
+  ///  NUL  NUL   t    u    l    a    S    5     <- representing
+  /// 
   /// b00 indicates if the view owns its storage and is responsible for its deallocation if it is
   /// out-of-line. Unowned, out-of-line storage corresponds to static allocations.
   ///
