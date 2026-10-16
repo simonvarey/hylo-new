@@ -1,13 +1,11 @@
-struct S is Movable {
+struct S {
   memberwise init
 }
 
-given S is Movable {
-  fun take_value(from source: sink Self) auto { set { } inout {} }
-}
+given S is Movable { }
 
 public fun main()  {
-  var s0 = S()
+  /*var s0 = S()
   var s1 = S()
-  &s0.take_value@set(from: s1)
+  &s0.take_value(from: s1)*/
 }
